@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<executable>
+    <title>My Macro Name</title>
+    <description>Macro Description</description>
+    <category>ImageJ</category>
+    <contributor>E. Marinetto</contributor>
+
+    <parameters>
+        <label>Parameters group name</label>
+        <description>
+            Parameters of the ImageJ Macro
+        </description>
+
+        <integer>
+            <name>intVariable</name>
+            <flag>i</flag>
+            <description>Number of times</description>
+            <default>30</default>
+        </integer>
+
+
+        <double>
+            <name>doubleVariable</name>
+            <flag>d</flag>
+            <longflag>double</longflag>
+            <description>An double with constraints</description>
+            <label>Double Parameter</label>
+            <default>30</default>
+            <constraints>
+                <minimum>0</minimum>
+                <maximum>1.e3</maximum>
+                <step>0</step>
+            </constraints>
+        </double>
+
+    </parameters>
+</executable>

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<executable>
+    <title>Segment Trabecula</title>
+    <description>This Macro uses the BoneJ Auto Thresholding for segment the trabecula in a RoI image</description>
+    <category>ImageJ.BoneJ</category>
+    <contributor>E. Marinetto</contributor>
+
+    <parameters>
+        <label>SegmentTrabecula Macro</label>
+        <description>
+            Input Parameters
+        </description>
+
+        <file>
+            <label>Input Image</label>
+            <name>Input Image</name>
+            <flag>inputImage</flag>
+            <channel>input</channel>
+            <description>Image to be thresholded</description>
+        </file>
+
+        <file>
+            <label>Output Image</label>
+            <name>Output Image</name>
+            <flag>outputImage</flag>
+            <channel>output</channel>
+            <description>Trabecula segmentation</description>
+        </file>
+
+        <double>
+            <label>Smooth Sigma</label>
+            <name>Smooth Sigma</name>
+            <flag>SMOOTH_Sigma</flag>
+            <description>Sigma for Gaussian Filtering</description>
+            <default>0.01</default>
+            <constraints>
+                <step>0.01</step>
+                <minimum>0</minimum>
+            </constraints>
+        </double>
+
+        <integer>
+            <label>Threshold Test Number</label>
+            <name>Threshold Test Number</name>
+            <flag>TH_Tests</flag>
+            <description>Number of test to perform</description>
+            <default>11</default>
+            <constraints>
+                <step>1</step>
+                <minimum>1</minimum>
+            </constraints>
+        </integer>
+
+        <double>
+            <name>Threshold range</name>
+            <label>Threshold range</label>
+            <flag>TH_Range</flag>
+            <description>Range of Thresholds for testing</description>
+            <default>0.2</default>
+            <constraints>
+                <step>0.1</step>
+                <minimum>0.1</minimum>
+            </constraints>
+        </double>
+
+        <integer>
+            <label>Threshold Subvolume</label>
+            <name>Threshold Subvolume</name>
+            <flag>TH_Subvolume</flag>
+            <description>Threshold subvolume</description>
+            <default>256</default>
+            <constraints>
+                <step>1</step>
+                <minimum>0</minimum>
+            </constraints>
+        </integer>
+
+        <integer>
+            <label>Threshold Erosions</label>
+            <name>Threshold Erosions</name>
+            <flag>TH_Erosion</flag>
+            <description>Number of Erosions</description>
+            <default>1</default>
+            <constraints>
+                <step>1</step>
+                <minimum>0</minimum>
+            </constraints>
+        </integer>
+
+        <integer>
+            <label>Threshold Dilations</label>
+            <name>Threshold Dilations</name>
+            <flag>TH_Dilation</flag>
+            <description>Number of Dilations</description>
+            <default>2</default>
+            <constraints>
+                <step>1</step>
+                <minimum>0</minimum>
+            </constraints>
+        </integer>
+    </parameters>
+</executable>
