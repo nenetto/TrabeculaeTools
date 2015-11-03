@@ -305,23 +305,23 @@ showProgress(0.25);
 //######################
 // Run Analyze Skeleton
 //######################
-print("[INFO] Analizing Skeleton");
-run("Analyse Skeleton", "prune=none prune show");
+//print("[INFO] Analizing Skeleton");
+//run("Analyse Skeleton", "prune=none prune show");
 	// Save data
-	selectWindow("Tagged skeleton");
-	print("[INFO] Saving file: " +ResultImagesDir + "\\" + OriginalImage_Name + "_TaggedSkeleton.tif");
-	saveAs("Tiff", ResultImagesDir + "\\" + OriginalImage_Name + "_TaggedSkeleton.tif");
-	run("Close");
-	selectWindow("Branch information");
-	print("[INFO] Saving file: " + ResultDataDir + "\\" + OriginalImage_Name + "_TrabeculaeSkeleton_BranchInfo.csv");
-	saveAs("Text", ResultDataDir + "\\" + OriginalImage_Name + "_TrabeculaeSkeleton_BranchInfo.csv");
-    run("Close");
-	selectWindow("Results");
-	print("[INFO] Saving file: " + ResultDataDir + "\\" + OriginalImage_Name + "_TrabeculaeSkeleton_Results.csv");
-	saveAs("Text", ResultDataDir + "\\" + OriginalImage_Name + "_TrabeculaeSkeleton_Results.csv");
-	run("Close");
+//	selectWindow("Tagged skeleton");
+//	print("[INFO] Saving file: " +ResultImagesDir + "\\" + OriginalImage_Name + "_TaggedSkeleton.tif");
+//	saveAs("Tiff", ResultImagesDir + "\\" + OriginalImage_Name + "_TaggedSkeleton.tif");
+//	run("Close");
+//	selectWindow("Branch information");
+//	print("[INFO] Saving file: " + ResultDataDir + "\\" + OriginalImage_Name + "_TrabeculaeSkeleton_BranchInfo.csv");
+//	saveAs("Text", ResultDataDir + "\\" + OriginalImage_Name + "_TrabeculaeSkeleton_BranchInfo.csv");
+//  run("Close");
+//	selectWindow("Results");
+//	print("[INFO] Saving file: " + ResultDataDir + "\\" + OriginalImage_Name + "_TrabeculaeSkeleton_Results.csv");
+//	saveAs("Text", ResultDataDir + "\\" + OriginalImage_Name + "_TrabeculaeSkeleton_Results.csv");
+//	run("Close");
 	// Close All images
-	run("Close All");
+//	run("Close All");
 
 showProgress(0.27);
 

@@ -66,7 +66,7 @@ def joinBoneJResults(resultsPath, resultsJoinedFile, imageName = 'ImageName', ro
             pass #print '             :-' + f
             pass
 
-        if(len(onlyfiles) == 14):
+        if(len(onlyfiles) == 12):
             correctFlag = True
             pass #print '    [OK] Correct number of data files: ' + str(len(onlyfiles))
         else:
@@ -276,6 +276,7 @@ def joinBoneJResults(resultsPath, resultsJoinedFile, imageName = 'ImageName', ro
                     pass #print '              -' + columnNamesCorrected_Thickness[i] + ': ' + str(my_data_Thickness[i])
                     pass
 
+            '''
             elif "TrabeculaeSkeleton_BranchInfo" in f:
                 pass #print '       [Info] Reading Trabeculae Skeleton Branch Info Results...'
                 correctFlag = True
@@ -310,6 +311,7 @@ def joinBoneJResults(resultsPath, resultsJoinedFile, imageName = 'ImageName', ro
                     pass #print '              -' + columnNamesCorrected_TrabeculaeSkeleton[i] + ': ' + str(my_data_TrabeculaeSkeleton[0,i])
                     pass
 
+            '''
             elif "VolumeFraction_Surface" in f:
                 pass #print '       [Info] Reading Volume Fraction Surface Results...'
                 correctFlag = True
@@ -408,8 +410,8 @@ def joinBoneJResults(resultsPath, resultsJoinedFile, imageName = 'ImageName', ro
 
         pass #print '[Info] Number of columns is ' + str(len(columnNamesTotal))
 
+        '''
         # Check wich data has more rows
-
         maxRowNumber = my_data_TrabeculaeSkeleton_BranchInfo.shape[0] * my_data_TrabeculaeSkeleton.shape[0]
 
         pass #print '[Info] Number of rows will be ' + str(maxRowNumber)
@@ -429,7 +431,8 @@ def joinBoneJResults(resultsPath, resultsJoinedFile, imageName = 'ImageName', ro
                     iteratorData = iteratorData + 1
         except:
             totalData = commonData
-
+        '''
+        totalData = commonData
 
 
 
@@ -539,7 +542,13 @@ def extractSquareRoIs( pathToMaskFile, sizeRoImm, pathToSaveDir, nRandomRoIs ):
     erodedMask = vtkhelper.ImageData_to_array(vtkReslicer.GetOutput())
 
     # Saving new mask
-    erodedImagePath = pathToSaveDir + '\\' + pathToMaskFile.split("\\")[-1][:-4] + '_Eroded_' + str(sizeRoImm) + 'mm.nii'
+    # Folder for RoI results
+    saveDir = pathToSaveDir + '\\RoIMasks'
+    if not os.path.exists(saveDir):
+        os.makedirs(saveDir)
+
+
+    erodedImagePath = saveDir + '\\' + pathToMaskFile.split("\\")[-1][:-4] + '_RoIMask' + str(sizeRoImm) + 'mm.nii'
     pass #print "[{0:.2f} s]".format(time.time() - start) + "    - Saving result mask..."
     vtkWriter = vtk.vtkNIFTIImageWriter()
     vtkWriter.SetFileName(erodedImagePath)
@@ -592,7 +601,11 @@ def extractSquareRoIs( pathToMaskFile, sizeRoImm, pathToSaveDir, nRandomRoIs ):
 
     # Writing the RoI file
     pass #print "[{0:.2f} s]".format(time.time() - start) + "    - Writing RoI file into " + 'RoIs_' + str(sizeRoImm) + 'mm.csv'
-    fileName = pathToSaveDir + '\RoIs_' + str(sizeRoImm) + 'mm.csv'
+    saveDir = pathToSaveDir + '\\RandomRoIfiles'
+    if not os.path.exists(saveDir):
+        os.makedirs(saveDir)
+
+    fileName = saveDir + '\\' + pathToMaskFile.split("\\")[-1][:-4] + '_RandomRoIs' + str(sizeRoImm) + 'mm.nii'
     RoIfileStructureHeader = 'RoI.Number, Center.x, Center.y, Center.z, RoI.Size.mm, RoI.Shape'
     np.savetxt(fileName, \
                RoIfileStructure, \
@@ -715,7 +728,11 @@ def randomTransformation(roiImageFilepath,pathToSaveDir, TNumber):
 
     # Save transform
     pass #print "[{0:.2f} s]".format(time.time() - start) + "    - Writing Transform file into " + roiImageFilepath.split("\\")[-1][:-4] + '_T_' + str(TNumber) + '.tfm'
-    fileName = pathToSaveDir + '\\' + roiImageFilepath.split("\\")[-1][:-4] + '_T_' + str(TNumber) + '.tfm'
+    pathToSaveTransforms = pathToSaveDir + '\\TransformationFiles'
+    if not os.path.exists(pathToSaveTransforms):
+        os.makedirs(pathToSaveTransforms)
+
+    fileName = pathToSaveTransforms + '\\' + roiImageFilepath.split("\\")[-1][:-4] + '_T_' + str(TNumber) + '.tfm'
     np.savetxt(fileName, \
                randomT, \
                fmt='%10.5f', \
@@ -749,7 +766,11 @@ def randomTransformation(roiImageFilepath,pathToSaveDir, TNumber):
 
     # Saving wrapped image
     pass #print "[{0:.2f} s]".format(time.time() - start) + "    - Writing Transform file into " + roiImageFilepath.split("\\")[-1][:-4] + '_T_' + str(TNumber) + '.nii'
-    roiImageFilepathResult = pathToSaveDir + "\\" + roiImageFilepath.split("\\")[-1][:-4] + '_T_' + str(TNumber) + '.nii'
+    pathToSaveTransformedImages = pathToSaveDir + '\\TransformedFiles'
+    if not os.path.exists(pathToSaveTransformedImages):
+        os.makedirs(pathToSaveTransformedImages)
+
+    roiImageFilepathResult = pathToSaveTransformedImages + "\\" + roiImageFilepath.split("\\")[-1][:-4] + '_TNum' + str(TNumber) + '.nii'
 
     vtkWriter = vtk.vtkNIFTIImageWriter()
     vtkWriter.SetFileName(roiImageFilepathResult)
@@ -758,3 +779,6 @@ def randomTransformation(roiImageFilepath,pathToSaveDir, TNumber):
     vtkWriter.Update()
 
     return roiImageFilepathResult
+
+def getSimilarityMetrics(pathToMaskFile, pathToMaskGStandard):
+
