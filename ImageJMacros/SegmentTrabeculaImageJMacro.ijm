@@ -246,8 +246,7 @@ run("Purify", "labelling=Mapped chunk=4 make_copy");
 selectWindow("Purified");
 run("Dilate (3D)", "iso=255");
 run("Erode (3D)", "iso=255");
-saveAs("Tiff", outputImage);
-
+run("NIfTI-1", "save=" + outputImage);
 
 showProgress(1);
 eval("script", "System.exit(0);");

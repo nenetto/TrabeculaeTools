@@ -287,17 +287,17 @@ print("[INFO] Making dir: " + ResultDataDir);
 
 // Open the image
 print("[INFO] Read Segmented Image: " + Original_ROI_Image_File_Path);
-open(Original_ROI_Image_File_Path);
+run("NIfTI-Analyze", "open=" + Original_ROI_Image_File_Path);
 
 //######################
 // Run Skeletonize 3D
 //######################
-print("[INFO] Skeletonize 3D processing");
-run("Skeletonise 3D");
-selectImage(2);
-print("[INFO] Saving file: " + ResultImagesDir + "\\" + OriginalImage_Name + "_TrabeculaeSkeleton.tif");
-saveAs("Tiff", ResultImagesDir + "\\" + OriginalImage_Name + "_TrabeculaeSkeleton.tif");
-close();
+//print("[INFO] Skeletonize 3D processing");
+//run("Skeletonise 3D");
+//selectImage(2);
+//print("[INFO] Saving file: " + ResultImagesDir + "\\" + OriginalImage_Name + "_TrabeculaeSkeleton.tif");
+//saveAs("Tiff", ResultImagesDir + "\\" + OriginalImage_Name + "_TrabeculaeSkeleton.tif");
+//close();
 
 
 showProgress(0.25);
@@ -332,7 +332,8 @@ showProgress(0.27);
 print("[INFO] Volume Fraction");
 // Open the Trabeculae Image Segmentation
 print("[INFO] Open file: " + Original_ROI_Image_File_Path);
-open(Original_ROI_Image_File_Path);
+run("NIfTI-Analyze", "open=" + Original_ROI_Image_File_Path);
+
 
 //VF_SurfaceResampling = 6;
 print("[INFO] Volume Fraction Voxel");
@@ -516,7 +517,7 @@ run("Close All");
 //######################
 // Run Anisotropy
 //######################
-open(Original_ROI_Image_File_Path);
+run("NIfTI-Analyze", "open=" + Original_ROI_Image_File_Path);
 print("[INFO] Anisotropy");
 	//ANISOTROPY_Radius = 64.5;
 	//ANISOTROPY_Vectors = 50000;
