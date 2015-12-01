@@ -3,11 +3,12 @@ import ctk_cli
 
 class macroImageJ(imagej):
 
-    def __init__(self, imagejPath, macroPath, xmlDefinition):
+    def __init__(self, imagejPath, macroPath, xmlDefinition, defaultTimeout = 60):
         super(macroImageJ, self).__init__(imagejPath)
         self._macroPath = macroPath
         self._xmlDefinition = xmlDefinition
         self.readXmlDefinition()
+        self.defaultTimeout = defaultTimeout
 
     def readXmlDefinition(self):
         #print "Reading xml macro description"
@@ -71,7 +72,34 @@ class macroImageJ(imagej):
         for param in self._paramDictionary:
             macroParams = macroParams + "-" + param + " " + str(self._paramDictionary[param][1]) + " "
 
-        self.runImageJMacro( macroPath = self._macroPath , macroParams = macroParams, macroName = self._CLImodule.title)
+        self.runImageJMacro( macroPath = self._macroPath , macroParams = macroParams, timeout = self.defaultTimeout, macroName = self._CLImodule.title)
+
+        paramsReturn = {}
+        for param in self._paramDictionary:
+            paramsReturn[param] = self._paramDictionary[param][1]
+
+        return paramsReturn
+
+    def runMacroData(self, **kwargs):
+        #print "#########################################################"
+        #print "               ",self._CLImodule.title
+        #print "#########################################################"
+
+        readyForRun = False
+
+        #Read arguments
+        for paramName in kwargs.keys():
+            self._paramDictionary[paramName][1] = kwargs[paramName]
+
+        #self.printArgs()
+        #print "#########################################################"
+
+
+
+        # Prepare macroParams string
+        macroParams = ''
+        for param in self._paramDictionary:
+            macroParams = macroParams + "-" + param + " " + str(self._paramDictionary[param][1]) + " "
 
         paramsReturn = {}
         for param in self._paramDictionary:

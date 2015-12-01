@@ -1,4 +1,26 @@
 import subprocess
+import threading
+
+
+class RunCmd(threading.Thread):
+
+    def __init__(self, cmd, timeout):
+        threading.Thread.__init__(self)
+        self.cmd = cmd
+        self.timeout = timeout
+
+    def run(self):
+        self.p = subprocess.Popen(self.cmd)
+        self.p.wait()
+
+    def Run(self):
+        self.start()
+        self.join(self.timeout)
+
+        if self.is_alive():
+            self.p.kill()      #use self.p.terminate() if process dont needs a kill -9
+            self.join()
+
 
 class imagej(object):
 
@@ -9,7 +31,7 @@ class imagej(object):
             print "[ERROR]: ImageJ path is empty"
         self._executable = imagej_exe
 
-    def runImageJMacro(self, macroPath, macroParams, macroName = 'Macro'):
+    def runImageJMacro(self, macroPath, macroParams, timeout = 60, macroName = 'Macro'):
         '''Run a ImageJ Macro using command line
 
         Keyword arguments:
@@ -20,14 +42,5 @@ class imagej(object):
         '''
 
         cmdline = self._executable + ' --no-splash -macro  \"' + macroPath + '\" \"' + macroParams + '\"'
-        #print '    - Launching: ' + cmdline
 
-        try:
-            retcode = 0
-            retcode = subprocess.call(cmdline, shell=True)
-            if retcode == 0:
-                pass #print '    - ' + macroName + " finished [OK]"
-            else:
-                print '    - [ERROR] ' + macroName + " finished with code [Handled Error Code]: ", retcode
-        except OSError as e:
-            print >> sys.stderr, '    - [ERROR] ' + macroName , " Execution Macro ImageJ failed:", e
+        RunCmd(cmdline, timeout).Run()
