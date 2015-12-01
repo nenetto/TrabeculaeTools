@@ -1,14 +1,8 @@
+__author__ = 'Eugenio Marinetto'
 
 import csv
 import numpy as np
-from os import listdir
-from os.path import isfile, join, exists
-from numpy import genfromtxt
 import vtk
-from PythonTools.helpers import vtk as vtkhelper
-from PythonTools import registration, transforms, transformations, io
-from scipy import ndimage
-from scipy.spatial.distance import dice, jaccard, matching, rogerstanimoto, russellrao, sokalmichener, sokalsneath, yule
 import math
 import os
 import time
@@ -16,7 +10,17 @@ import sys
 import seaborn as sns
 import pandas as pd
 import SimpleITK as sitk
+
 from datetime import datetime
+from os import listdir
+from os.path import isfile, join, exists
+from numpy import genfromtxt
+from scipy import ndimage
+from scipy.spatial.distance import dice, jaccard, matching, rogerstanimoto, russellrao, sokalmichener, sokalsneath, yule
+
+from PythonTools.helpers import vtk as vtkhelper
+from PythonTools import registration, transforms, transformations, io
+
 from ImageJTools import macroImageJ
 
 

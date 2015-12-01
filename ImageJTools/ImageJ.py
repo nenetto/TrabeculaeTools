@@ -3,6 +3,11 @@ import threading
 
 
 class RunCmd(threading.Thread):
+    '''RunCmd Class
+        This class allow for running a command line program using threads
+        Also implement a timeout option that allow for killing the process if
+        it takes longer than timeout
+    '''
 
     def __init__(self, cmd, timeout):
         threading.Thread.__init__(self)
@@ -23,6 +28,10 @@ class RunCmd(threading.Thread):
 
 
 class imagej(object):
+    '''imagej Class
+        This class is an abstraction for an instance of ImageJ
+        It allows for calling macros from a python script
+    '''
 
     def __init__(self, imagej_exe):
         try:

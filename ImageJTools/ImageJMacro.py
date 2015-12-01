@@ -2,6 +2,11 @@ from ImageJ import imagej
 import ctk_cli
 
 class macroImageJ(imagej):
+    '''macroImageJ Class
+        This class is an abstraction for an instance of an imagej macro
+        It allows for calling macros from a python script.
+        Uses ctk_cli XML standard for the description of the inputs parameters of the macro
+    '''
 
     def __init__(self, imagejPath, macroPath, xmlDefinition, defaultTimeout = 60):
         super(macroImageJ, self).__init__(imagejPath)
@@ -11,6 +16,7 @@ class macroImageJ(imagej):
         self.defaultTimeout = defaultTimeout
 
     def readXmlDefinition(self):
+        '''Read the XML definition and creates the dictionary for the parameters of the macro'''
         #print "Reading xml macro description"
         self._CLImodule = ctk_cli.CLIModule(self._xmlDefinition)
         (arguments, options, outputs) =  self._CLImodule.classifyParameters()
@@ -33,6 +39,7 @@ class macroImageJ(imagej):
         return
 
     def printArgs(self):
+        '''Print information about the macro call'''
         for param in self._paramDictionary:
             if(self._paramDictionary[param][0]):
                 print "    -", param, ": ", self._paramDictionary[param][1], " (required)"
@@ -40,6 +47,7 @@ class macroImageJ(imagej):
                 print "    -", param, ": ", self._paramDictionary[param][1]
 
     def printArgsInfo(self):
+        '''Prints complete description about the macro'''
         print "Macro         :[", self._CLImodule.title, "]"
         print "Description   :", self._CLImodule.description
         print "Category      :", self._CLImodule.category
@@ -52,6 +60,7 @@ class macroImageJ(imagej):
                 print "    -",e.flag, " [", e.default ,"]", e.description
 
     def runMacro(self, **kwargs):
+        '''Run the macro'''
         #print "#########################################################"
         #print "               ",self._CLImodule.title
         #print "#########################################################"
@@ -81,6 +90,7 @@ class macroImageJ(imagej):
         return paramsReturn
 
     def runMacroData(self, **kwargs):
+        '''Run the macro fake, for testing'''
         #print "#########################################################"
         #print "               ",self._CLImodule.title
         #print "#########################################################"
@@ -93,8 +103,6 @@ class macroImageJ(imagej):
 
         #self.printArgs()
         #print "#########################################################"
-
-
 
         # Prepare macroParams string
         macroParams = ''
