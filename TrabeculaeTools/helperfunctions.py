@@ -21,8 +21,7 @@ from scipy.spatial.distance import dice, jaccard, matching, rogerstanimoto, russ
 from PythonTools.helpers import vtk as vtkhelper
 from PythonTools import registration, transforms, transformations, io
 
-from ImageJTools import macroImageJ
-
+from pyimagej.pyimagej import ImageJ, MacroImageJ
 
 def joinBoneJResults(resultsPath, resultsJoinedFile, imageName = 'ImageName', roiName = 'ROIName', voxelSizeX = 1.0, voxelSizeY = 1.0, voxelSizeZ = 1.0, roiSizeX = 1.0, roiSizeY = 1.0, roiSizeZ = 1.0, roINumber = 0, algorithm = 0, transf = 0,goldStandard = 0, parameters = None):
     '''Join the results csv files after processing of a Segmented Image
