@@ -996,7 +996,8 @@ def LocalThresholding(imagePath, GaussRadius, GradCutOffLow, GradCutOffHigh, Bac
 def ResampleImage(targetImage, sourceImage):
     targetImage = sitk.Cast(sitk.ReadImage(targetImage), sitk.sitkFloat32)
     sourceImage = sitk.Cast(sitk.ReadImage(sourceImage), sitk.sitkFloat32)
-    sourceImage = sitk.Resample(sourceImage , targetImage,sitk.Transform(), sitk.sitkBSpline, sitk.sitkFloat32)
+    sourceImage = sitk.Resample(sourceImage , targetImage,sitk.Transform(), sitk.sitkBSpline)
+
     return sourceImage
 
 def SegmentTrabeculaeLocalThresholding( imagePath, PathToSegmentedRoIfile, GaussRadius, GradCutOffLow, GradCutOffHigh, BackGroundValue ):
