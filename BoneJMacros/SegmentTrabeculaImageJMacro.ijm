@@ -212,7 +212,7 @@ showProgress(0.0);
 //######################
 
 // Open the image
-open(inputImage);
+run("NIfTI-Analyze", "open=" + inputImage);
 showProgress(0.1);
 
 //######################

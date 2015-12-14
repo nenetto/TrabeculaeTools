@@ -2,26 +2,26 @@ import numpy as np
 import SimpleITK as sitk
 import time
 import os
-import datetime
+from datetime import datetime, date, time, timedelta
 import sys
 import pandas
 from PythonTools import io
 from pyimagej.pyimagej import MacroImageJ
 from scipy.spatial.distance import dice, jaccard, matching, rogerstanimoto, russellrao, sokalmichener, sokalsneath, yule
 
-def DownsampleImage(ImagePath, ResultPath, DownsamplingFactor = 3, PrintDebug = True):
+
+
+def DownsampleImage(ImagePath, ResultPath, DownsamplingFactor = 3):
     '''Read image and create a downsampled version according to DownsamplingFactor
     '''
     # Declare starting time for process
-    startTime = time.time()
+    startTime = time()
 
     image = sitk.Cast(sitk.ReadImage(ImagePath), sitk.sitkFloat32)
 
     voxelSize = np.array(image.GetSpacing());
     imageSize = np.array(image.GetSize());
 
-    if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Downsampling..."
     downSampleFactor = DownsamplingFactor
     itkResampler = sitk.ResampleImageFilter()
     itkResampler.SetInterpolator(sitk.sitkLinear)
@@ -34,24 +34,44 @@ def DownsampleImage(ImagePath, ResultPath, DownsamplingFactor = 3, PrintDebug = 
     sitk.WriteImage(image, ResultPath)
 
     image = None
-    if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Finished!"
 
 def PrintPercentage(percentage, preMessage = ''):
     '''This function only prints a percentage during processing
     '''
-    timing = datetime.datetime.now().strftime('%H:%M:%S')
-    timing = "[" + timing + "]"
+    global __previousTime
+    global __previousPercentage
+
+    try:
+        __previousTime
+        __previousPercentage
+    except:
+        __previousPercentage = 0.00001
+        __previousTime = datetime.now()
+
+    # Calculate percentage step
+    percentageStep = percentage - __previousPercentage
+
+
+    # Calculate time step from previous percentage step
+    elapsedTime = datetime.now() - __previousTime
+
+    # Calculate Remaining Time
+    remainingTime = timedelta(seconds=elapsedTime.total_seconds() * (100.0 - percentage)/percentageStep)
+    #remainingTime = str(remainingTime)
+    remainingTime = "[" + str(remainingTime) + "]"
+
 
     nlines = (np.round(20 * percentage/100.0)).astype(int)
-    newString = preMessage + timing + "--[" + '|'*nlines + ' '*(20-nlines) + "]"
+    newString = preMessage + "[{0:.2f}%]".format(percentage) + "--[" + '|'*nlines + ' '*(20-nlines) + "]-- Expected end in " + remainingTime
     if(percentage == 100.0):
         newString = newString + ' Finished!'
+        __previousTime = datetime.now()
+        __previousPercentage = 0.00001
 
     sys.stdout.write("\r%s" % newString)
     sys.stdout.flush()
 
-def JoinCSVFiles(PathToFileList, PathToFileComplete, PrintDebug = True):
+def JoinCSVFiles(PathToFileList, PathToFileComplete):
     '''
         Join all files with the same pandas structure to a unique file.
 
@@ -61,10 +81,7 @@ def JoinCSVFiles(PathToFileList, PathToFileComplete, PrintDebug = True):
         PringDebug         [True]  -- True if printing messages are wanted
     '''
     # Declare starting time for process
-    startTime = time.time()
-
-    if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Reading and joining files..."
+    startTime = time()
 
     first = True
     for csvFile in PathToFileList:
@@ -75,9 +92,6 @@ def JoinCSVFiles(PathToFileList, PathToFileComplete, PrintDebug = True):
             newDataFrame = pandas.read_csv(csvFile,index_col=0)
             TotalDataFrame = TotalDataFrame.append(newDataFrame, ignore_index=True)
 
-
-    if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Saving to File "
 
     TotalDataFrame.to_csv(PathToFileComplete)
 
@@ -105,34 +119,26 @@ def CreateRoIFile(MaskFilePath, ErodedMaskFilePath = None, RoIcsvFilePath = None
     '''
 
     # Declare starting time for process
-    startTime = time.time()
+    startTime = time()
 
     # Set the random Seed
     if RandomSeed is not None:
         np.random.seed(RandomSeed)
 
-    # Read the MaskFile
-    if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Reading MaskFile"
 
     totalBoneMask = sitk.Cast(sitk.ReadImage(MaskFilePath), sitk.sitkUInt8)
 
-    # Define edge
-    if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Calculating Kernel Edge size"
+
 
     kernelEdge = (np.round(SizeRoImm / np.array(totalBoneMask.GetSpacing()))).astype(int)
 
-    if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Kernel Size [",kernelEdge,"] voxels"
 
     # Eroding mask
     voxelSize = np.array(totalBoneMask.GetSpacing());
     imageSize = np.array(totalBoneMask.GetSize());
 
     # Downsample image by a factor of 4
-    if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Downsampling..."
+
     downSampleFactor = 4.0
     itkResampler = sitk.ResampleImageFilter()
     itkResampler.SetInterpolator(sitk.sitkNearestNeighbor)
@@ -146,8 +152,7 @@ def CreateRoIFile(MaskFilePath, ErodedMaskFilePath = None, RoIcsvFilePath = None
     radius = np.round(SizeRoImm / np.array(voxelSize * downSampleFactor * 2)).astype(int)
 
     # Create filter
-    if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Eroding..."
+
     itkEroder = sitk.BinaryErodeImageFilter()
     itkEroder.SetKernelType(sitk.sitkBox)
     itkEroder.SetKernelRadius(radius)
@@ -157,8 +162,7 @@ def CreateRoIFile(MaskFilePath, ErodedMaskFilePath = None, RoIcsvFilePath = None
     erodedtotalBoneMask = itkEroder.Execute(erodedtotalBoneMask)
 
     # Upsample image recovering space
-    if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Upsampling..."
+
     itkResampler = sitk.ResampleImageFilter()
     itkResampler.SetInterpolator(sitk.sitkNearestNeighbor)
     itkResampler.SetDefaultPixelValue(0)
@@ -178,33 +182,30 @@ def CreateRoIFile(MaskFilePath, ErodedMaskFilePath = None, RoIcsvFilePath = None
     # Compute number of found RoIs
     nFoundRoIs = len(Vx)
 
-    if PrintDebug:
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - Extracting RoIs, {0:d} RoIs were found ".format(nFoundRoIs)
+
 
     if nFoundRoIs == 0:
-        print "[#####][{0:.2f} s]".format(time.time() - startTime) + "    - Returning None because No RoIs were found for a size of {0:.2f}".format(SizeRoImm)
+        print "[#####]    - Returning None because No RoIs were found for a size of {0:.2f}".format(SizeRoImm)
         return None
 
     if ErodedMaskFilePath is not None:
-        if PrintDebug:
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - Saving Eroded Mask to "
-            print "[{0:.2f} s]".format(time.time() - startTime) + "        - " + ErodedMaskFilePath
+
 
         sitk.WriteImage(erodedtotalBoneMask, ErodedMaskFilePath)
 
     if NRandomRoIs is None:
         if PrintDebug:
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - NRandomRoIs is [None] -> Extracting all possible RoIs"
+            print "[{0:.2f} s]".format(startTime) + "    - NRandomRoIs is [None] -> Extracting all possible RoIs"
             nRoIs = nFoundRoIs
     else:
         if( NRandomRoIs > 0 and NRandomRoIs <= nFoundRoIs):
             if PrintDebug:
-                print "[{0:.2f} s]".format(time.time() - startTime) + "    - Extracting {0:d} RoIs".format(NRandomRoIs)
+                print "[{0:.2f} s]".format( startTime) + "    - Extracting {0:d} RoIs".format(NRandomRoIs)
             maxInt = sys.maxint - 1
             # Avoiding Overflow
             if (nFoundRoIs > maxInt):
                 if PrintDebug:
-                    print "[{0:.2f} s]".format(time.time() - startTime) + "    - Correcting Overflow"
+                    print "[{0:.2f} s]".format( startTime) + "    - Correcting Overflow"
                 greaterTimes = nFoundRoIs/maxInt
                 randomSample = np.random.random_integers(0, maxInt, nRandomRoIs)
                 for i in range(greaterTimes):
@@ -220,8 +221,8 @@ def CreateRoIFile(MaskFilePath, ErodedMaskFilePath = None, RoIcsvFilePath = None
             nRoIs = NRandomRoIs
         else:
             if PrintDebug:
-                print "[{0:.2f} s]".format(time.time() - startTime) + "    - NRandomRoIs [{0:d}] > [{1:d}]Found RoIs Number".format(NRandomRoIs,nFoundRoIs)
-                print "[{0:.2f} s]".format(time.time() - startTime) + "        - Extracting {0:d} RoIs".format(nFoundRoIs)
+                print "[{0:.2f} s]".format( startTime) + "    - NRandomRoIs [{0:d}] > [{1:d}]Found RoIs Number".format(NRandomRoIs,nFoundRoIs)
+                print "[{0:.2f} s]".format( startTime) + "        - Extracting {0:d} RoIs".format(nFoundRoIs)
             nRoIs = nFoundRoIs
 
 
@@ -236,7 +237,7 @@ def CreateRoIFile(MaskFilePath, ErodedMaskFilePath = None, RoIcsvFilePath = None
     # FileFrom (MaskFilePath), RoI Number, RoI Size mm, Center X mm, Center Y mm, Center Z mm,
 
     if PrintDebug:
-                print "[{0:.2f} s]".format(time.time() - startTime) + "    - Creating RoI Data Structure"
+                print "[{0:.2f} s]".format( startTime) + "    - Creating RoI Data Structure"
 
 
     RoIStructure = pandas.DataFrame(columns = [ 'File', \
@@ -259,12 +260,12 @@ def CreateRoIFile(MaskFilePath, ErodedMaskFilePath = None, RoIcsvFilePath = None
 
     if RoIcsvFilePath is not None:
         if PrintDebug:
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - Saving RoIs to "
-            print "[{0:.2f} s]".format(time.time() - startTime) + "        - " + RoIcsvFilePath
+            print "[{0:.2f} s]".format( startTime) + "    - Saving RoIs to "
+            print "[{0:.2f} s]".format( startTime) + "        - " + RoIcsvFilePath
         RoIStructure.to_csv(RoIcsvFilePath)
 
     if PrintDebug:
-                print "[{0:.2f} s]".format(time.time() - startTime) + "    - Finished"
+                print "[{0:.2f} s]".format( startTime) + "    - Finished"
 
     # Return Structure
     return RoIStructure
@@ -303,10 +304,10 @@ def CreateRoIfileStudy(MaskFilePath, RoIFolder, RoISizeVector, NRandomRoIs, Rand
         if 'RoIFile_' in f:
             PathToFileList.append(os.path.join(RoIFolder,f))
 
-    RoIStructure = JoinCSVFiles(PathToFileList,PathToFileComplete, PrintDebug = False)
+    RoIStructure = JoinCSVFiles(PathToFileList,PathToFileComplete)
     PrintPercentage(100.0, preMessage = 'Creating RoI File: ')
 
-def CreateRoI(ImageFilePath, RoIDefinition, RoIFilePath = None, PrintDebug = True):
+def CreateRoI(ImageFilePath, RoIDefinition, RoIFilePath = None):
     '''
         Crop ImageFilePath according to RoIDefinition parameters. If the RoIFilePath is set, the RoI will be
         saved into file with name RoIFilePath.
@@ -320,15 +321,11 @@ def CreateRoI(ImageFilePath, RoIDefinition, RoIFilePath = None, PrintDebug = Tru
         PringDebug         [True]  -- True if printing messages are wanted
     '''
     # Declare starting time for process
-    startTime = time.time()
+    startTime = time()
 
-    if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Extracting RoI with parameters: "
-        print RoIDefinition
 
     # Read image
-    if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Reading Image"
+
 
     image = sitk.Cast(sitk.ReadImage(ImageFilePath), sitk.sitkFloat32)
     imageSize, voxelSize = np.array(image.GetSize()), np.array(image.GetSpacing())
@@ -340,9 +337,7 @@ def CreateRoI(ImageFilePath, RoIDefinition, RoIFilePath = None, PrintDebug = Tru
 
     startFilterRoI = list(np.round( (centerRoI - RoIDefinition['RoI Size mm']/2.0) / voxelSize).astype(int))
     sizeFilterRoI  = list(np.round( RoIDefinition['RoI Size mm'] / voxelSize ).astype(int))
-    if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - RoI starts at ", startFilterRoI
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - RoI size      ", sizeFilterRoI
+
 
     # Create filter crop and apply
     itkExtractRoI = sitk.RegionOfInterestImageFilter()
@@ -352,17 +347,12 @@ def CreateRoI(ImageFilePath, RoIDefinition, RoIFilePath = None, PrintDebug = Tru
     image = None
 
     if RoIFilePath is None:
-        if PrintDebug:
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - No RoI file Name provided"
+
         RoIFilePath = ImageFilePath[:-4] + '_{1:.2f}mm_RoI{0:d}.nii'.format(RoIDefinition['RoI Number'],RoIDefinition['RoI Size mm'])
 
-    if PrintDebug:
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - Saving RoI file to "
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - " + RoIFilePath
+
 
     sitk.WriteImage(imageRoI, RoIFilePath)
-    if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Finished"
 
 def CreateRoITransformed(ImageFilePath, RoIDefinition, TransformationFile, ReferenceRoIImageFilePath, RoIFilePath = None, PrintDebug = True):
     '''
@@ -381,15 +371,15 @@ def CreateRoITransformed(ImageFilePath, RoIDefinition, TransformationFile, Refer
     '''
 
     # Declare starting time for process
-    startTime = time.time()
+    startTime = time()
 
     if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Extracting RoI with parameters: "
+        print "[{0:.2f} s]".format( startTime) + "    - Extracting RoI with parameters: "
         print RoIDefinition
 
     # Read image
     if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Reading Image"
+        print "[{0:.2f} s]".format( startTime) + "    - Reading Image"
 
     image = sitk.Cast(sitk.ReadImage(ImageFilePath), sitk.sitkFloat32)
     imageSize, voxelSize = np.array(image.GetSize()), np.array(image.GetSpacing())
@@ -399,7 +389,7 @@ def CreateRoITransformed(ImageFilePath, RoIDefinition, TransformationFile, Refer
 
     # Transforming center of RoI to Moving Space
     if PrintDebug:
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - Transforming RoI center to moving space"
+            print "[{0:.2f} s]".format( startTime) + "    - Transforming RoI center to moving space"
     TReg = io.load_tfm(TransformationFile)
 
     centerRoI = np.array([  RoIDefinition['Center x mm'],\
@@ -412,12 +402,12 @@ def CreateRoITransformed(ImageFilePath, RoIDefinition, TransformationFile, Refer
     startFilterRoI = list(np.round( (centroidTransformed - sizeRoImmModified/2.0) / voxelSize).astype(int))
     sizeFilterRoI  = list(np.round( sizeRoImmModified / voxelSize ).astype(int))
     if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - RoI starts at ", startFilterRoI
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - RoI size      ", sizeFilterRoI
+        print "[{0:.2f} s]".format( startTime) + "    - RoI starts at ", startFilterRoI
+        print "[{0:.2f} s]".format( startTime) + "    - RoI size      ", sizeFilterRoI
 
     # Create filter crop and apply
     if PrintDebug:
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - Extracting RoI in Moving Space"
+            print "[{0:.2f} s]".format( startTime) + "    - Extracting RoI in Moving Space"
     itkExtractRoI = sitk.RegionOfInterestImageFilter()
     itkExtractRoI.SetIndex(startFilterRoI)
     itkExtractRoI.SetSize(sizeFilterRoI)
@@ -426,12 +416,12 @@ def CreateRoITransformed(ImageFilePath, RoIDefinition, TransformationFile, Refer
 
     # Register RoI
     if PrintDebug:
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - Transforming RoI to Target space"
+            print "[{0:.2f} s]".format( startTime) + "    - Transforming RoI to Target space"
     imageRoIReference = sitk.Cast(sitk.ReadImage(ReferenceRoIImageFilePath), sitk.sitkFloat32)
 
     # Resampling Reference RoI to imageRoI Spacing
     if PrintDebug:
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - Resampling..."
+            print "[{0:.2f} s]".format( startTime) + "    - Resampling..."
     itkResampler = sitk.ResampleImageFilter()
     itkResampler.SetInterpolator(sitk.sitkNearestNeighbor)
     itkResampler.SetOutputSpacing(imageRoI.GetSpacing())
@@ -446,22 +436,22 @@ def CreateRoITransformed(ImageFilePath, RoIDefinition, TransformationFile, Refer
 
     # Transform RoI to target Space
     if PrintDebug:
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - ..."
+            print "[{0:.2f} s]".format( startTime) + "    - ..."
     T = sitk.ReadTransform(TransformationFile)
     imageRoI = sitk.Resample(imageRoI, imageRoIReference, T, sitk.sitkBSpline, sitk.sitkFloat32)
 
     if RoIFilePath is None:
         if PrintDebug:
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - No RoI file Name provided"
+            print "[{0:.2f} s]".format( startTime) + "    - No RoI file Name provided"
         RoIFilePath = ImageFilePath[:-4] + '_{1:.2f}mm_RoI{0:d}.nii'.format(RoIDefinition['RoI Number'],RoIDefinition['RoI Size mm'])
 
     if PrintDebug:
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - Saving RoI file to "
-            print "[{0:.2f} s]".format(time.time() - startTime) + "    - " + RoIFilePath
+            print "[{0:.2f} s]".format( startTime) + "    - Saving RoI file to "
+            print "[{0:.2f} s]".format( startTime) + "    - " + RoIFilePath
 
     sitk.WriteImage(imageRoI, RoIFilePath)
     if PrintDebug:
-        print "[{0:.2f} s]".format(time.time() - startTime) + "    - Finished"
+        print "[{0:.2f} s]".format( startTime) + "    - Finished"
 
 def SegmentTrabeculaeBoneJ( imagejPath, macroPath, xmlDefinition, PathToRoIfile, PathToSegmentedRoIfile, defaultTimeout = 120, SMOOTH_Sigma = 0.03, TH_Erosion = 0, TH_Dilation = 0):
     '''
@@ -481,7 +471,7 @@ def SegmentTrabeculaeBoneJ( imagejPath, macroPath, xmlDefinition, PathToRoIfile,
     '''
 
     # Declare starting time for process
-    startTime = time.time()
+    startTime = time()
 
     segmentTrabecula = MacroImageJ(imagejPath = imagejPath,\
                                macroPath = macroPath,\
@@ -494,7 +484,8 @@ def SegmentTrabeculaeBoneJ( imagejPath, macroPath, xmlDefinition, PathToRoIfile,
                                 inputImage = PathToRoIfile,\
                                 outputImage = PathToSegmentedRoIfile)
 
-    #print "Finish!, total time:  {0:.2f}".format(time.time() - startTime)
+
+    #print "Finish!, total time:  {0:.2f}".format( startTime)
 
     if os.path.isfile(PathToSegmentedRoIfile):
         ResultStruct = pandas.DataFrame(columns = [ 'Origin RoI',\
@@ -514,6 +505,7 @@ def SegmentTrabeculaeBoneJ( imagejPath, macroPath, xmlDefinition, PathToRoIfile,
                                             'Number of Dilations' : TH_Dilation})
 
         return ResultStruct
+
     else:
         print "\n[ERROR] Something was wrong segmenting image: " + PathToRoIfile.split('\\')[-1][:-4]
         return None
@@ -531,7 +523,7 @@ def GetResultsFromSegmentation(dataSegmentation, dataMetricsParameters):
         dataMetricsParameters    -- Metric Parameters including the outputDir where metrics were saved
     '''
     # Declare starting time for process
-    startTime = time.time()
+    startTime = time()
 
 
     # Read Metric Data Results
@@ -637,7 +629,7 @@ def GetResultsFromSegmentation(dataSegmentation, dataMetricsParameters):
     # Join Together
     ResultingData = pandas.concat([dataSegmentation, dataMetricsParametersFixed, dataMetrics], axis=1, join_axes=[dataMetrics.index])
 
-    print "Finish!, total time:  {0:.2f}".format(time.time() - startTime)
+    print "Finish!, total time:  {0:.2f}".format( startTime)
 
     return ResultingData
 
@@ -810,3 +802,246 @@ def GetResultsForComparison(resultsGoldStandard, resultsTested, RoISize, RoINumb
     ResultingData = ResultingData.append(resultsGoldStandard)
 
     return ResultingData
+
+def LocalThresholding(imagePath, GaussRadius, GradCutOffLow, GradCutOffHigh, BackGroundValue):
+
+    original = sitk.Cast(sitk.ReadImage(imagePath), sitk.sitkFloat32)
+
+    # Smooth image
+    spacing = original.GetSpacing()[0]
+    GaussSigma = spacing * GaussRadius
+    smoothed = sitk.DiscreteGaussian(original,GaussSigma)
+
+    # Calculate Gradient
+    gradient = sitk.SobelEdgeDetection(smoothed)
+
+    # Get image data
+    gradientData = sitk.GetArrayFromImage(gradient)
+
+    # Histogram
+    #fig = plt.figure()
+    #ax = fig.add_subplot(111)
+    Nbins = 1000
+    #n, bins, patches = ax.hist(gradientData.flatten(), Nbins, normed=True, facecolor='green', alpha=0.75)
+    n, bins = np.histogram(gradientData.flatten(), bins=Nbins)
+
+    # Cumulative Histogram
+    ncum = np.cumsum(n)
+
+
+    ncum = (1.0*ncum)/np.max(ncum)
+    #l = ax.plot(bins[:-1], ncum*np.max(n), 'r-', linewidth=3)
+
+
+
+
+    GradCutOffHighComputed = (bins[:-1])[ncum > GradCutOffHigh][0]
+    GradCutOffLowComputed  = (bins[:-1])[ncum > GradCutOffLow][0]
+
+    #ax.axvline(GradCutOffLowComputed, color='b', linestyle='-', linewidth=3)
+    #ax.axvline(GradCutOffHighComputed, color='m', linestyle='-', linewidth=3)
+
+    #ax.set_xlabel('Smarts')
+    #ax.set_ylabel('Probability')
+    #ax.set_title('Gradient Histogram')
+    #ax.grid(True)
+    #plt.show()
+
+    # Calculate Edges image
+    softedges = gradientData*0.0
+    hardedges = gradientData*0.0
+    noedges = np.ones_like(gradientData)
+
+    hardedges[gradientData >= GradCutOffHighComputed] = 1
+    noedges = noedges - hardedges
+    hardedges = sitk.GetImageFromArray(hardedges, isVector=False)
+    hardedges.SetOrigin(gradient.GetOrigin())
+    hardedges.SetSpacing(gradient.GetSpacing())
+    hardedges = sitk.Cast(hardedges, sitk.sitkUInt8)
+
+    softedges[gradientData >= GradCutOffLowComputed] = 1
+    softedges[gradientData >= GradCutOffHighComputed] = 0
+    noedges = noedges - softedges
+    softedges = sitk.GetImageFromArray(softedges, isVector=False)
+    softedges.SetOrigin(gradient.GetOrigin())
+    softedges.SetSpacing(gradient.GetSpacing())
+    softedges = sitk.Cast(softedges, sitk.sitkUInt8)
+
+
+
+    # Discard not-connected weak edges
+    # We dilate the strong edges to mask the connected weak edges
+    # Calculate Radius
+    radius = 1 # one voxel closest
+
+    # Create filter
+    itkDilater = sitk.BinaryDilateImageFilter()
+    itkDilater.SetKernelType(sitk.sitkBox)
+    itkDilater.SetKernelRadius(radius)
+    itkDilater.SetForegroundValue(1.0)
+    itkDilater.SetBackgroundValue(0.0)
+    itkDilater.SetBoundaryToForeground(False)
+    hardedgesDilated = itkDilater.Execute(hardedges)
+
+    # Multiply Soft edges
+    softedges = softedges * hardedgesDilated
+
+    # Set of edges
+    setedges = sitk.GetArrayFromImage(hardedges)
+    setedges = setedges + sitk.GetArrayFromImage(softedges) * (-1)
+
+    setedges = sitk.GetImageFromArray(setedges, isVector=False)
+    setedges.SetOrigin(gradient.GetOrigin())
+    setedges.SetSpacing(gradient.GetSpacing())
+    setedges = sitk.Cast(setedges, sitk.sitkInt8)
+
+    hardedgesDilated = None
+    hardedges = None
+    softedges = None
+    gradientData = None
+
+
+    localThresholds = sitk.GetArrayFromImage(smoothed) * np.abs(sitk.GetArrayFromImage(setedges))
+    localThresholds = sitk.GetImageFromArray(localThresholds, isVector=False)
+    localThresholds.SetOrigin(original.GetOrigin())
+    localThresholds.SetSpacing(original.GetSpacing())
+    localThresholds = sitk.Cast(localThresholds, sitk.sitkFloat32)
+
+    maskLocalThreshold = np.abs(sitk.GetArrayFromImage(setedges))
+    maskLocalThreshold = sitk.GetImageFromArray(maskLocalThreshold, isVector=False)
+    maskLocalThreshold.SetOrigin(original.GetOrigin())
+    maskLocalThreshold.SetSpacing(original.GetSpacing())
+    maskLocalThreshold = sitk.Cast(maskLocalThreshold, sitk.sitkInt8)
+
+    # Dilate image Thresholds
+    i = 0
+    currentThr = localThresholds
+    currentMask = maskLocalThreshold
+    #localThresholds = sitk.GetArrayFromImage(localThresholds)
+    while (sitk.GetArrayFromImage(currentThr).min() == 0):
+        #print i, 'Dilating'
+        i += 1
+
+        # Dilation step for the Thresholds image
+        currentThrDilate = sitk.GrayscaleDilate(currentThr,1,sitk.sitkBox)
+
+        # Create mask dilating original by 1
+        radius = 1 # one voxel closest
+        itkDilater = sitk.BinaryDilateImageFilter()
+        itkDilater.SetKernelType(sitk.sitkBox)
+        itkDilater.SetKernelRadius(radius)
+        itkDilater.SetForegroundValue(1.0)
+        itkDilater.SetBackgroundValue(0.0)
+        itkDilater.SetBoundaryToForeground(False)
+        currentMaskDilated = itkDilater.Execute(currentMask)
+
+
+        # Create diference mask and multiply for original
+        diffMask = currentMaskDilated - currentMask
+        currentMask = currentMaskDilated
+
+        # Create next voxels to sum
+        nextVoxelsToSum = sitk.Cast(diffMask, sitk.sitkFloat32)*currentThrDilate
+
+        # Final Step adding new thresholds
+        currentThr = currentThr + nextVoxelsToSum
+
+    # For the Thrasholding adjustment we will need a gauss filtered image and an std filtering of the image
+    thresholds = currentThr
+
+    # Create the Gauss filtered image
+    maxSizeKernel = 3
+    thresholdsMean = sitk.DiscreteGaussian(thresholds, GaussSigma, maxSizeKernel)
+
+    # Create the STD filtered image
+    thresholdsSTD = sitk.Noise(thresholds,(1,1,1))
+
+
+    # Get image matrix for
+
+    originalForFilter = sitk.GetArrayFromImage(original)
+    thresholds = sitk.GetArrayFromImage(thresholds)
+    thresholdsMean = sitk.GetArrayFromImage(thresholdsMean)
+    thresholdsSTD = sitk.GetArrayFromImage(thresholdsSTD)
+    finalMask = originalForFilter*0.0
+
+    # Threshold the image
+
+    thresholdCondition = thresholdsMean - thresholdsSTD
+    adjustedThreshold = thresholds * (1 + (thresholdsMean - thresholds)/(thresholdsMean - BackGroundValue) )
+
+    # This is selected as Trabeculae
+    finalMask[(originalForFilter > thresholds) & \
+              (originalForFilter > thresholdCondition)] = 1.0
+
+    finalMask[(originalForFilter > thresholds) & \
+              (originalForFilter < thresholdCondition) & \
+              (originalForFilter > adjustedThreshold)] = 1.0
+
+
+
+    finalMask = sitk.GetImageFromArray(finalMask, isVector=False)
+    finalMask.SetOrigin(original.GetOrigin())
+    finalMask.SetSpacing(original.GetSpacing())
+    finalMask = sitk.Cast(finalMask, sitk.sitkUInt8)
+
+    #myshow3d(original, zslices=zslices2show, dpi=dpi2show,\
+    #        title="Original")
+
+    #myshow3d(finalMask, zslices=zslices2show, dpi=dpi2show,\
+    #        title="Mask")
+
+    return finalMask
+
+def ResampleImage(targetImage, sourceImage):
+    targetImage = sitk.Cast(sitk.ReadImage(targetImage), sitk.sitkFloat32)
+    sourceImage = sitk.Cast(sitk.ReadImage(sourceImage), sitk.sitkFloat32)
+    sourceImage = sitk.Resample(sourceImage , targetImage,sitk.Transform(), sitk.sitkBSpline, sitk.sitkFloat32)
+    return sourceImage
+
+def SegmentTrabeculaeLocalThresholding( imagePath, PathToSegmentedRoIfile, GaussRadius, GradCutOffLow, GradCutOffHigh, BackGroundValue ):
+    '''
+        Segment trabeculae from a RoI image and return segmentation parameters
+        using BoneJ for segmentation
+
+        Keyword arguments:
+        imagePath              -- Image to be Segmented
+        PathToSegmentedRoIfile -- Resulting Trabeculae image segmentation
+    '''
+
+    resultSegmentation = LocalThresholding(imagePath, GaussRadius, GradCutOffLow, GradCutOffHigh, BackGroundValue)
+    resultSegmentation = resultSegmentation*255
+    sitk.WriteImage(resultSegmentation,PathToSegmentedRoIfile)
+
+
+    if os.path.isfile(PathToSegmentedRoIfile):
+        ResultStruct = pandas.DataFrame(columns = [ 'Origin RoI',\
+                                                'Segmented File',\
+                                                'Segmentation Algorithm',\
+                                                'GaussRadius',\
+                                                'GradCutOffLow',\
+                                                'GradCutOffHigh',\
+                                                'BackGroundValue'\
+                                                ], index = range(1))
+
+
+        ResultStruct.iloc[0]  = pandas.Series({ 'Origin RoI' : imagePath,\
+                                            'Segmented File' : PathToSegmentedRoIfile,\
+                                            'Segmentation Algorithm' : 'Local Thresholding',\
+                                            'GaussRadius' : GaussRadius,\
+                                            'GradCutOffLow' : GradCutOffLow,\
+                                            'GradCutOffHigh' : GradCutOffHigh,\
+                                            'BackGroundValue' : BackGroundValue\
+                                            })
+
+        return ResultStruct
+    else:
+        print "\n[ERROR] Something was wrong segmenting image: " + PathToRoIfile.split('\\')[-1][:-4]
+        return None
+
+def SetImageOrigin(PathToRoIfile, PathToSegmentedRoIfile):
+    original = sitk.Cast(sitk.ReadImage(PathToRoIfile), sitk.sitkFloat32)
+    segmented = sitk.Cast(sitk.ReadImage(PathToSegmentedRoIfile), sitk.sitkUInt8)
+
+    segmented.SetOrigin(original.GetOrigin())
+    sitk.WriteImage(segmented,PathToSegmentedRoIfile)
